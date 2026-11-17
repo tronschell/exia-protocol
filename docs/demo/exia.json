@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json",
+  "exia": 1,
+  "id": "com.example.demo",
+  "name": "Starter Pack",
+  "description": "Comics and films to start with.",
+  "version": "1.0.0",
+  "icon": "https://tronschell.github.io/exia-protocol/demo/pack.png",
+  "items": [
+    {
+      "type": "repository",
+      "title": "Open Comics",
+      "description": "Creative Commons webcomics.",
+      "icon": "https://tronschell.github.io/exia-protocol/demo/comics/icon.png",
+      "url": "https://tronschell.github.io/exia-protocol/demo/comics",
+      "ids": [
+        "com.example.opencomics"
+      ],
+      "required": true
+    },
+    {
+      "type": "addon",
+      "title": "Example Films",
+      "description": "Classic films, with your account.",
+      "url": "https://tronschell.github.io/exia-protocol/demo/films/manifest.json",
+      "config": {
+        "key": "{{filmsKey}}"
+      },
+      "fields": [
+        {
+          "type": "link",
+          "title": "Get an API Key",
+          "url": "https://github.com/tronschell/exia-protocol"
+        },
+        {
+          "type": "secret",
+          "id": "filmsKey",
+          "title": "API Key",
+          "required": true
+        }
+      ],
+      "icon": "https://tronschell.github.io/exia-protocol/demo/films/icon.png"
+    },
+    {
+      "type": "metadata",
+      "title": "Kitsu",
+      "description": "Kitsu first for manga and anime details.",
+      "provider": "kitsu",
+      "first": true
+    }
+  ]
+}
