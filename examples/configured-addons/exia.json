@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json",
+  "exia": 1,
+  "id": "org.example.lectures",
+  "name": "Lecture Hall",
+  "description": "Open courseware, set up for you.",
+  "version": "2.0.0",
+  "fields": [
+    {
+      "type": "choice",
+      "id": "language",
+      "title": "Language",
+      "default": "en",
+      "options": [
+        { "value": "en", "title": "English" },
+        { "value": "es", "title": "Spanish" },
+        { "value": "ja", "title": "Japanese" }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "type": "addon",
+      "title": "Open Courseware",
+      "description": "University lectures, with your account for saved courses.",
+      "url": "https://courses.example.org/manifest.json",
+      "required": true,
+      "config": {
+        "lang": "{{language}}",
+        "hd": "{{hd}}",
+        "plan": "{{plan}}",
+        "apiKey": "{{apiKey}}"
+      },
+      "fields": [
+        { "type": "toggle", "id": "hd", "title": "HD Only", "default": true },
+        {
+          "type": "choice",
+          "id": "plan",
+          "title": "Plan",
+          "options": [
+            { "value": "free", "title": "Free" },
+            { "value": "member", "title": "Member" }
+          ]
+        },
+        { "type": "link", "title": "Get an API Key", "url": "https://courses.example.org/account/keys", "when": { "plan": "member" } },
+        { "type": "secret", "id": "apiKey", "title": "API Key", "required": true, "when": { "plan": "member" } }
+      ]
+    },
+    {
+      "type": "addon",
+      "title": "Campus Library",
+      "description": "Your campus library's own addon link.",
+      "url": "{{libraryURL}}",
+      "fields": [
+        { "type": "text", "id": "libraryURL", "title": "Addon Link", "format": "url", "required": true }
+      ]
+    },
+    {
+      "type": "addon",
+      "title": "Study Notes",
+      "description": "Subtitles and notes synced from your account.",
+      "url": "https://notes.example.org/{{account}}/manifest.json",
+      "fields": [
+        {
+          "type": "login",
+          "id": "account",
+          "title": "Sign In to Study Notes",
+          "url": "https://notes.example.org/connect?redirect={{callback}}",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

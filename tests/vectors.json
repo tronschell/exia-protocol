@@ -1,0 +1,66 @@
+{
+  "description": "Conformance vectors: every client must render these packages and answers to exactly these URLs.",
+  "vectors": [
+    {
+      "name": "templates in a url are encoded like encodeURIComponent",
+      "package": {
+        "exia": 1, "id": "org.example.v1", "name": "V", "version": "1.0.0",
+        "items": [{ "type": "addon", "title": "A", "url": "https://a.example.org/{{key}}/manifest.json",
+                    "fields": [{ "type": "secret", "id": "key", "title": "Key" }] }]
+      },
+      "values": { "key": "a b/c?d&e=f'(g)*!~ü" },
+      "urls": ["https://a.example.org/a%20b%2Fc%3Fd%26e%3Df'(g)*!~%C3%BC/manifest.json"]
+    },
+    {
+      "name": "config becomes the SDK path segment, keys sorted, typed toggle, empty values dropped",
+      "package": {
+        "exia": 1, "id": "org.example.v2", "name": "V", "version": "1.0.0",
+        "items": [{ "type": "addon", "title": "A", "url": "https://a.example.org/manifest.json",
+                    "config": { "zeta": "{{hd}}", "alpha": "lang-{{lang}}", "empty": "{{note}}", "n": 3, "path": "/x/" },
+                    "fields": [
+                      { "type": "toggle", "id": "hd", "title": "HD" },
+                      { "type": "text", "id": "lang", "title": "Lang", "default": "en" },
+                      { "type": "text", "id": "note", "title": "Note" }
+                    ] }]
+      },
+      "values": { "hd": true },
+      "urls": ["https://a.example.org/%7B%22alpha%22%3A%22lang-en%22%2C%22n%22%3A3%2C%22path%22%3A%22%2Fx%2F%22%2C%22zeta%22%3Atrue%7D/manifest.json"]
+    },
+    {
+      "name": "config that renders empty leaves the url as it is",
+      "package": {
+        "exia": 1, "id": "org.example.v3", "name": "V", "version": "1.0.0",
+        "items": [{ "type": "addon", "title": "A", "url": "https://a.example.org/manifest.json",
+                    "config": { "key": "{{key}}" },
+                    "fields": [{ "type": "secret", "id": "key", "title": "Key" }] }]
+      },
+      "values": {},
+      "urls": ["https://a.example.org/manifest.json"]
+    },
+    {
+      "name": "a url that is one template is the person's own link",
+      "package": {
+        "exia": 1, "id": "org.example.v4", "name": "V", "version": "1.0.0",
+        "items": [{ "type": "addon", "title": "A", "url": "{{link}}",
+                    "fields": [{ "type": "text", "id": "link", "title": "Link", "format": "url" }] }]
+      },
+      "values": { "link": "https://me.example.net/abc%2F/manifest.json" },
+      "urls": ["https://me.example.net/abc%2F/manifest.json"]
+    },
+    {
+      "name": "hidden fields are empty and package fields reach items",
+      "package": {
+        "exia": 1, "id": "org.example.v5", "name": "V", "version": "1.0.0",
+        "fields": [{ "type": "choice", "id": "region", "title": "Region",
+                     "options": [{ "value": "eu", "title": "Europe" }, { "value": "us", "title": "US" }] }],
+        "items": [{ "type": "repository", "title": "R", "url": "https://{{region}}.example.org/repo?token={{token}}",
+                    "fields": [
+                      { "type": "toggle", "id": "private", "title": "Private" },
+                      { "type": "secret", "id": "token", "title": "Token", "when": { "private": true } }
+                    ] }]
+      },
+      "values": { "token": "should-not-appear" },
+      "urls": ["https://eu.example.org/repo?token="]
+    }
+  ]
+}

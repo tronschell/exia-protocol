@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json",
+  "exia": 1,
+  "id": "org.example.starter",
+  "name": "Starter Pack",
+  "description": "Comics, films and artwork to start with.",
+  "version": "1.2.0",
+  "icon": "https://example.org/starter/icon.png",
+  "items": [
+    {
+      "type": "repository",
+      "title": "Open Comics",
+      "description": "Creative Commons webcomics in English and French.",
+      "icon": "https://comics.example.org/icon.png",
+      "url": "https://comics.example.org/sources/index.min.json",
+      "ids": ["org.example.opencomics.en", "org.example.opencomics.fr"]
+    },
+    {
+      "type": "addon",
+      "title": "Public Domain Films",
+      "description": "Classic films that are free to watch.",
+      "url": "https://films.example.org/manifest.json"
+    },
+    {
+      "type": "metadata",
+      "title": "Kitsu",
+      "description": "Kitsu first for manga and anime details.",
+      "provider": "kitsu",
+      "first": true
+    },
+    {
+      "type": "metadata",
+      "title": "TMDB Artwork",
+      "description": "More posters and backdrops to pick from.",
+      "provider": "tmdb",
+      "key": "{{tmdbKey}}",
+      "fields": [
+        { "type": "link", "title": "Get a TMDB Key", "url": "https://www.themoviedb.org/settings/api" },
+        { "type": "secret", "id": "tmdbKey", "title": "TMDB Key" }
+      ]
+    }
+  ]
+}

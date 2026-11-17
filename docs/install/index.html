@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Install in Exia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #000; --fg: #fff; --muted: #8e8e93; --line: #2c2c2e; --gem: #1fd1a5; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: Geist, -apple-system, system-ui, sans-serif; }
+  main { min-height: 100svh; display: grid; place-items: center; padding: 32px 16px; }
+  .card { width: 100%; max-width: 420px; display: grid; gap: 24px; justify-items: center; text-align: center; }
+  .logo { width: 72px; height: 36px; }
+  .icon { width: 88px; height: 88px; border-radius: 20px; object-fit: cover; background: #1c1c1e; display: none; }
+  h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+  .desc { margin: -12px 0 0; color: var(--muted); font-size: 16px; }
+  .items { list-style: none; margin: 0; padding: 0; width: 100%; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: none; }
+  .items li { display: flex; gap: 12px; align-items: center; padding: 12px 16px; text-align: left; font-size: 16px; }
+  .items li + li { border-top: 1px solid var(--line); }
+  .items img { width: 28px; height: 28px; border-radius: 7px; flex: none; }
+  .open { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 52px; border-radius: 26px;
+          background: var(--fg); color: #000; font-size: 17px; font-weight: 600; text-decoration: none; }
+  .get { color: var(--muted); font-size: 15px; text-decoration: none; }
+  .get:hover, .get:focus-visible { color: var(--fg); }
+  .error { color: #ff453a; font-size: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <svg class="logo" viewBox="0 0 360 180" aria-label="Exia" role="img">
+      <g fill="none" stroke-linejoin="round" stroke-linecap="round" stroke-width="10">
+        <path d="M25,27 L180,152 L335,27 L180,114 Z" stroke="#fff"/>
+        <path d="M136,89 L140,58 L149,42 L165,31 L195,31 L211,42 L220,58 L224,89" stroke="#fff"/>
+        <path d="M165,72 L195,72 L203,89 L180,101.9 L157,89 Z" stroke="#1FD1A5" fill="#1FD1A5" stroke-width="8"/>
+      </g>
+    </svg>
+    <img class="icon" id="icon" alt="">
+    <h1 id="name">Install in Exia</h1>
+    <p class="desc" id="desc" hidden></p>
+    <ul class="items" id="items"></ul>
+    <a class="open" id="open" href="#">Open in Exia</a>
+    <a class="get" href="https://projectexia.com">Get Exia</a>
+  </div>
+</main>
+<script>
+(() => {
+  const param = new URLSearchParams(location.search).get('url');
+  let target = null;
+  try {
+    const url = new URL(param);
+    if (url.protocol === 'https:' || url.protocol === 'http:') target = url;
+  } catch {}
+  const open = document.getElementById('open');
+  if (!target) {
+    open.replaceWith(Object.assign(document.createElement('p'), { className: 'error', textContent: 'This install link is missing its package URL.' }));
+    return;
+  }
+  open.href = 'projectexia://add?url=' + encodeURIComponent(target.href);
+
+  const text = (value, max) => typeof value === 'string' ? value.slice(0, max) : '';
+  const https = (value) => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : null; } catch { return null; } };
+  const favicon = (value) => { try { return new URL('/favicon.ico', value.includes('{{') ? undefined : value).href; } catch { return null; } };
+
+  // Shows the package's name and items when its host allows cross-origin reads (GitHub Pages does).
+  fetch(target.href, { headers: { accept: 'application/json' } })
+    .then((r) => r.ok ? r.json() : Promise.reject())
+    .then((pkg) => {
+      if (!pkg || pkg.exia !== 1) return;
+      const name = text(pkg.name, 40);
+      if (name) { document.getElementById('name').textContent = name; document.title = `Install ${name} in Exia`; }
+      const desc = text(pkg.description, 80);
+      if (desc) { const d = document.getElementById('desc'); d.textContent = desc; d.hidden = false; }
+      const icon = https(pkg.icon);
+      if (icon) { const i = document.getElementById('icon'); i.onload = () => { i.style.display = 'block'; }; i.src = icon; }
+      const list = document.getElementById('items');
+      for (const item of Array.isArray(pkg.items) ? pkg.items.slice(0, 50) : []) {
+        const li = document.createElement('li');
+        const img = document.createElement('img');
+        img.alt = '';
+        const src = https(item.icon) || (typeof item.url === 'string' ? favicon(item.url) : null);
+        if (src) img.src = src;
+        img.style.opacity = '0';
+        img.onload = () => { img.style.opacity = '1'; };
+        li.append(img, document.createTextNode(text(item.title, 40)));
+        list.append(li);
+      }
+      if (list.children.length) list.style.display = 'block';
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

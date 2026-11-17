@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json",
+  "title": "Exia package",
+  "description": "An exia.json file, version 1. Rules JSON Schema can't express (unique field ids, template references, when references) are listed in SPEC.md section 8 and checked by the reference validator.",
+  "type": "object",
+  "required": ["exia", "id", "name", "version", "items"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "exia": { "const": 1, "description": "Protocol version." },
+    "id": {
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)+$",
+      "description": "Lowercase reverse-DNS id, like org.example.pack."
+    },
+    "name": { "$ref": "#/$defs/title" },
+    "description": { "$ref": "#/$defs/description" },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "icon": { "$ref": "#/$defs/httpsURL" },
+    "fields": { "$ref": "#/$defs/fields" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$" },
+    "httpsURL": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "url": {
+      "type": "string",
+      "pattern": "^(https?://[^\\s]+|\\{\\{[A-Za-z][A-Za-z0-9_]{0,31}\\}\\})$",
+      "description": "An http(s) URL, or a single {{fieldId}} template. May contain {{fieldId}} templates."
+    },
+    "fieldID": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$",
+      "not": { "const": "callback" }
+    },
+    "when": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/fieldID" },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "boolean" },
+          { "type": "string" },
+          { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        ]
+      }
+    },
+    "fields": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/field" }
+    },
+    "field": {
+      "type": "object",
+      "required": ["type", "title"],
+      "properties": {
+        "type": { "enum": ["text", "secret", "toggle", "choice", "login", "link"] },
+        "title": { "$ref": "#/$defs/title" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "text" } } },
+          "then": {
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "#/$defs/fieldID" },
+              "required": { "type": "boolean" },
+              "default": { "type": "string" },
+              "format": { "enum": ["url", "email", "number"] },
+              "when": { "$ref": "#/$defs/when" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "secret" } } },
+          "then": {
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "#/$defs/fieldID" },
+              "required": { "type": "boolean" },
+              "when": { "$ref": "#/$defs/when" }
+            },
+            "not": { "required": ["default"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "toggle" } } },
+          "then": {
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "#/$defs/fieldID" },
+              "default": { "type": "boolean" },
+              "when": { "$ref": "#/$defs/when" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "choice" } } },
+          "then": {
+            "required": ["id", "options"],
+            "properties": {
+              "id": { "$ref": "#/$defs/fieldID" },
+              "options": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": ["value", "title"],
+                  "properties": {
+                    "value": { "type": "string", "minLength": 1, "maxLength": 64 },
+                    "title": { "$ref": "#/$defs/title" }
+                  }
+                }
+              },
+              "default": { "type": "string" },
+              "when": { "$ref": "#/$defs/when" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "login" } } },
+          "then": {
+            "required": ["id", "url"],
+            "properties": {
+              "id": { "$ref": "#/$defs/fieldID" },
+              "url": { "type": "string", "pattern": "^https://[^\\s]*\\{\\{callback\\}\\}[^\\s]*$" },
+              "param": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$" },
+              "required": { "type": "boolean" },
+              "when": { "$ref": "#/$defs/when" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "link" } } },
+          "then": {
+            "required": ["url"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^https?://[^\\s]+$" },
+              "when": { "$ref": "#/$defs/when" }
+            },
+            "not": { "required": ["id"] }
+          }
+        }
+      ]
+    },
+    "item": {
+      "type": "object",
+      "required": ["type", "title"],
+      "properties": {
+        "type": { "enum": ["repository", "addon", "metadata"] },
+        "title": { "$ref": "#/$defs/title" },
+        "description": { "$ref": "#/$defs/description" },
+        "icon": { "$ref": "#/$defs/httpsURL" },
+        "required": { "type": "boolean" },
+        "fields": { "$ref": "#/$defs/fields" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "repository" } } },
+          "then": {
+            "required": ["url"],
+            "properties": {
+              "url": { "$ref": "#/$defs/url" },
+              "ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "addon" } } },
+          "then": {
+            "required": ["url"],
+            "properties": {
+              "url": {
+                "$ref": "#/$defs/url",
+                "pattern": "(/manifest\\.json$|\\{\\{)",
+                "description": "Ends in /manifest.json unless it uses templates."
+              },
+              "config": {
+                "type": "object",
+                "propertyNames": { "pattern": "^[A-Za-z0-9_.-]{1,64}$" },
+                "additionalProperties": { "type": ["string", "boolean", "integer"] }
+              }
+            },
+            "if": { "required": ["config"] },
+            "then": { "properties": { "url": { "pattern": "/manifest\\.json$" } } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "metadata" } } },
+          "then": {
+            "required": ["provider"],
+            "properties": {
+              "provider": { "enum": ["anilist", "kitsu", "mal", "tmdb"] },
+              "key": { "type": "string", "minLength": 1 },
+              "first": { "type": "boolean" }
+            },
+            "anyOf": [{ "required": ["key"] }, { "required": ["first"], "properties": { "first": { "const": true } } }],
+            "allOf": [
+              {
+                "if": { "properties": { "provider": { "const": "kitsu" } } },
+                "then": { "not": { "required": ["key"] } }
+              },
+              {
+                "if": { "properties": { "provider": { "const": "tmdb" } } },
+                "then": { "not": { "required": ["first"] } }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json",
+  "exia": 1,
+  "id": "org.example.minimal",
+  "name": "Example Comics",
+  "version": "1.0.0",
+  "items": [
+    {
+      "type": "repository",
+      "title": "Example Comics",
+      "description": "Webcomics from the Example Comics library.",
+      "url": "https://comics.example.org/sources",
+      "required": true
+    }
+  ]
+}
