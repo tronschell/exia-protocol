@@ -9,6 +9,14 @@ works like Exia.
 
 [![Install in Exia](badges/install-in-exia-black.svg)](badges/)
 
+**Guide:** [Build with the Exia Protocol](https://projectexia.com/guides/build-with-exia-protocol/), step by step with screenshots.
+
+<p>
+  <img src="docs/img/iphone-package-install-page.webp" width="240" alt="The Install in Exia web page for a package">
+  <img src="docs/img/iphone-package-overview.webp" width="240" alt="Exia's Install Package screen with each item's icon, description, reachable status and switch">
+  <img src="docs/img/iphone-package-setup.webp" width="240" alt="A package setup page in Exia asking for an API key">
+</p>
+
 ## A package
 
 ```json
