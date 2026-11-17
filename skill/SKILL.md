@@ -31,18 +31,26 @@ below doesn't cover the case.
    - Sign-in: `login` with a `url` containing `{{callback}}`; the page redirects to the callback with
      `?token=…`.
    - Show a field only sometimes: `when: { "otherField": value }` (other field must be an earlier toggle or choice).
+   - If an item's `url` has templates, add `probe`: a URL without templates that answers now (for an addon,
+     usually its plain `https://host/manifest.json`), so Exia can show it's reachable and its icon before
+     the person types anything.
 5. **Mark must-have items `required: true`.** Everything else gets a switch, on by default.
-6. **Validate**, then fix every error and warning:
+6. **Validate**, then fix every error and warning (each has a line, a column and usually a fix):
    ```sh
-   npx -y github:tronschell/exia-protocol validate exia.json
-   npx -y github:tronschell/exia-protocol render exia.json --set apiKey=test   # see the exact URLs
-   npx -y github:tronschell/exia-protocol check exia.json                      # reachable status
+   npx exia-package validate exia.json
+   npx exia-package render exia.json --set apiKey=test   # see the exact URLs
+   npx exia-package check exia.json                      # reachable status
    ```
-7. **Publish.** Host `exia.json` over https (GitHub Pages works). Make the install link and badge:
+   Start from scratch with `npx exia-package init`. To try it on a phone, `npx exia-package serve` prints a
+   QR code that opens the package in Exia over Wi-Fi.
+7. **Publish.** Host `exia.json` over https. The quickest way is the template repository
+   https://github.com/tronschell/exia-package-template ("Use this template", then Settings › Pages ›
+   Source: GitHub Actions): every push is checked and published, and the run summary has the install link.
+   Otherwise make the link and badge yourself:
    ```sh
-   npx -y github:tronschell/exia-protocol link https://you.github.io/pack/exia.json
+   npx exia-package link https://you.github.io/pack/exia.json
    ```
-   Put the printed HTML or Markdown badge on the page.
+   Put the printed HTML or Markdown badge on the page. In CI, `uses: tronschell/exia-protocol@v1` checks the file.
 
 ## Rules
 
@@ -76,8 +84,8 @@ below doesn't cover the case.
       "type": "addon",
       "title": "Example Films",
       "description": "Classic films, with your account.",
-      "url": "https://films.example.org/manifest.json",
-      "config": { "key": "{{filmsKey}}" },
+      "url": "https://films.example.org/{{filmsKey}}/manifest.json",
+      "probe": "https://films.example.org/manifest.json",
       "fields": [
         { "type": "link", "title": "Get an API Key", "url": "https://films.example.org/keys" },
         { "type": "secret", "id": "filmsKey", "title": "API Key", "required": true }

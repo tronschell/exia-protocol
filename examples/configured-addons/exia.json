@@ -60,6 +60,7 @@
       "title": "Study Notes",
       "description": "Subtitles and notes synced from your account.",
       "url": "https://notes.example.org/{{account}}/manifest.json",
+      "probe": "https://notes.example.org/manifest.json",
       "fields": [
         {
           "type": "login",

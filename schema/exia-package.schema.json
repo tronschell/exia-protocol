@@ -33,6 +33,11 @@
     "title": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$" },
     "description": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$" },
     "httpsURL": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "probe": {
+      "type": "string",
+      "pattern": "^https://[^\\s{}]+$",
+      "description": "A URL that answers now, checked for reachable status and the icon while url still waits for answers. No templates."
+    },
     "url": {
       "type": "string",
       "pattern": "^(https?://[^\\s]+|\\{\\{[A-Za-z][A-Za-z0-9_]{0,31}\\}\\})$",
@@ -172,6 +177,7 @@
             "required": ["url"],
             "properties": {
               "url": { "$ref": "#/$defs/url" },
+              "probe": { "$ref": "#/$defs/probe" },
               "ids": {
                 "type": "array",
                 "minItems": 1,
@@ -191,6 +197,7 @@
                 "pattern": "(/manifest\\.json$|\\{\\{)",
                 "description": "Ends in /manifest.json unless it uses templates."
               },
+              "probe": { "$ref": "#/$defs/probe", "pattern": "/manifest\\.json$" },
               "config": {
                 "type": "object",
                 "propertyNames": { "pattern": "^[A-Za-z0-9_.-]{1,64}$" },

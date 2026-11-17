@@ -66,6 +66,7 @@ An item that is switched off installs nothing, and its fields are not shown.
 | -------- | --------------- | -------- | ----- |
 | `url`    | string          | yes      | The repository's URL: its base, or its `index.min.json` (Aidoku) or `versioning.json` (Paperback). Templates allowed (section 4). |
 | `ids`    | array of string | no       | Extension ids to install from the repository. Without `ids`, only the repository is added and the person picks extensions later. |
+| `probe`  | string          | no       | An `https` URL without templates, checked while `url` still waits for answers (2.5). |
 
 The client works out whether the repository is Aidoku or Paperback. Every id in `ids` MUST exist in the
 repository at install time, or the install fails.
@@ -76,6 +77,7 @@ repository at install time, or the install fails.
 | -------- | ------ | -------- | ----- |
 | `url`    | string | yes      | The addon's manifest URL, ending in `/manifest.json`. Templates allowed. |
 | `config` | object | no       | Settings for addons built on the Stremio addon SDK. Keys are 1 to 64 of `A-Z a-z 0-9 _ . -`; values are strings, booleans or integers. String values may hold templates. |
+| `probe`  | string | no     | An `https` manifest URL without templates, checked while `url` still waits for answers (2.5). Usually the addon's plain manifest: `https://addon.example.com/manifest.json`. |
 
 With `config`, `url` MUST end in `/manifest.json`, and the client installs the SDK's configured URL:
 
@@ -108,7 +110,8 @@ it as an `addon` item.
 The client shows the first of these that loads:
 
 1. the item's `icon`;
-2. the addon manifest's `logo`, or for a `repository` with one id, that extension's icon;
+2. the addon manifest's `logo`, or for a `repository` with one id, that extension's icon, read from the URL
+   being checked for reachable status (2.5);
 3. `https://<host>/apple-touch-icon.png`, then `https://<host>/favicon.ico`, where host is the item URL's host
    (for `metadata`, the provider's own logo).
 
@@ -117,9 +120,12 @@ The client shows the first of these that loads:
 Before installing, the client checks each item and shows whether it's reachable:
 
 - `repository`: the repository index loads (`index.min.json` or `versioning.json`).
-- `addon`: the manifest loads. With `config`, the plain `url` is checked. A `url` that still has empty
-  templates is checked once they are filled in.
+- `addon`: the manifest loads. With `config`, the plain `url` is checked.
 - `metadata`: no check.
+
+While a `url` still has empty templates, the client checks `probe` instead, and without `probe` it checks
+nothing until they are filled in. Give `probe` whenever `url` has templates, so people see the item is up
+(and its icon) before they type anything.
 
 An unreachable item can still be installed: the install fails cleanly if it's still down.
 
@@ -213,6 +219,10 @@ package removes the repositories, extensions and addons it added. Metadata setti
 Serve `exia.json` over `https` with any JSON content type. GitHub Pages works. A client given a URL that
 doesn't end in `.json` tries `<url>/exia.json`.
 
+For testing, clients MAY also load a package over `http` from a private network address (`10.0.0.0/8`,
+`172.16.0.0/12`, `192.168.0.0/16`, `*.local`), which is what `exia-package serve` uses. Packages you share
+use `https`.
+
 ## 7. Install links
 
 ```
@@ -241,3 +251,14 @@ express are:
 - a `metadata` item has `key` or `first`, and only where the provider allows it.
 
 The reference validator in [`src/`](src/) checks all of it.
+
+## 9. Compatibility
+
+- Adding an optional property, item type or field type that older clients can safely ignore keeps `exia`
+  at `1`. Clients MUST ignore properties they don't know (section 1).
+- Removing something, making it required, or changing what an existing property means raises `exia` to
+  the next integer. Clients refuse packages with a higher `exia` than they support.
+- A package's own updates keep its `id` and raise its `version`.
+
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+

@@ -93,12 +93,13 @@
     const url = typeof item.url === 'string' ? item.url : '';
     const base = origin(url);
     try {
-      if (item.type === 'addon' && base) {
-        const plain = url.includes('{{') ? base + '/manifest.json' : url;
-        const logo = https((await json(plain)).logo);
+      // Until the person fills in templates, the item's probe stands in for its url (SPEC.md 2.5).
+      const ready = url.includes('{{') ? https(item.probe) : url;
+      if (item.type === 'addon' && (ready || base)) {
+        const logo = https((await json(ready || base + '/manifest.json')).logo);
         if (logo) list.push(logo);
-      } else if (item.type === 'repository' && Array.isArray(item.ids) && item.ids.length === 1 && !url.includes('{{')) {
-        const index = url.endsWith('.json') ? url : url.replace(/\/$/, '') + '/index.min.json';
+      } else if (item.type === 'repository' && Array.isArray(item.ids) && item.ids.length === 1 && ready) {
+        const index = ready.endsWith('.json') ? ready : ready.replace(/\/$/, '') + '/index.min.json';
         const data = await json(index);
         const sources = Array.isArray(data) ? data : (data && data.sources) || [];
         const source = sources.find((s) => s && s.id === item.ids[0]);

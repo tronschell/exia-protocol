@@ -1,0 +1,18 @@
+name: Check Exia package
+description: Validate an exia.json against the Exia Package Protocol, with each problem marked on its line.
+author: Project Exia
+branding:
+  icon: package
+  color: green
+inputs:
+  file:
+    description: Path to the package file.
+    default: exia.json
+runs:
+  using: composite
+  steps:
+    - name: Validate
+      shell: bash
+      env:
+        EXIA_FILE: ${{ inputs.file }}
+      run: node "$GITHUB_ACTION_PATH/bin/exia-package.js" validate "$EXIA_FILE"

@@ -22,8 +22,8 @@ const WHOLE_TEMPLATE = /^\{\{([A-Za-z][A-Za-z0-9_]{0,31})\}\}$/;
 const PACKAGE_KEYS = ['$schema', 'exia', 'id', 'name', 'description', 'version', 'icon', 'fields', 'items'];
 const ITEM_KEYS = {
   common: ['type', 'title', 'description', 'icon', 'required', 'fields'],
-  repository: ['url', 'ids'],
-  addon: ['url', 'config'],
+  repository: ['url', 'ids', 'probe'],
+  addon: ['url', 'config', 'probe'],
   metadata: ['provider', 'key', 'first'],
 };
 const FIELD_KEYS = {
@@ -49,6 +49,36 @@ function parseURL(value, { https = false } = {}) {
   }
 }
 
+/** The closest of `options` to `word` when it's a likely typo (edit distance 2 or less), else null. */
+export function closest(word, options) {
+  if (!isString(word)) return null;
+  const distance = (a, b) => {
+    const row = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      let previous = row[0];
+      row[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const current = row[j];
+        row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1));
+        previous = current;
+      }
+    }
+    return row[b.length];
+  };
+  let best = null;
+  let bestDistance = 3;
+  for (const option of options) {
+    const d = distance(word, option);
+    if (d < bestDistance) { best = option; bestDistance = d; }
+  }
+  return best;
+}
+
+const suggest = (word, options) => {
+  const match = closest(word, options);
+  return match && match !== word ? `; did you mean "${match}"?` : '';
+};
+
 /** Template names in a string, in order (may repeat). */
 export function templates(value) {
   return isString(value) ? [...value.matchAll(TEMPLATE)].map((m) => m[1]) : [];
@@ -71,7 +101,7 @@ export function validate(pkg) {
 
   const unknown = (object, allowed, path) => {
     for (const key of Object.keys(object)) {
-      if (!allowed.includes(key)) warn(path ? `${path}.${key}` : key, `unknown property "${key}" is ignored`);
+      if (!allowed.includes(key)) warn(path ? `${path}.${key}` : key, `unknown property "${key}" is ignored${suggest(key, allowed)}`);
     }
   };
   const text = (value, path, max, required) => {
@@ -115,7 +145,7 @@ export function validate(pkg) {
       const at = `${path}[${index}]`;
       if (!isObject(field)) return error(at, 'must be an object');
       if (!FIELD_TYPES.includes(field.type)) {
-        return error(`${at}.type`, `must be one of ${FIELD_TYPES.join(', ')}`);
+        return error(`${at}.type`, `must be one of ${FIELD_TYPES.join(', ')}${suggest(field.type, FIELD_TYPES)}`);
       }
       unknown(field, FIELD_KEYS[field.type], at);
       text(field.title, `${at}.title`, 40, true);
@@ -138,7 +168,7 @@ export function validate(pkg) {
         case 'text':
           if (field.default !== undefined && !isString(field.default)) error(`${at}.default`, 'must be a string');
           if (field.format !== undefined && !['url', 'email', 'number'].includes(field.format)) {
-            error(`${at}.format`, 'must be url, email or number');
+            error(`${at}.format`, `must be url, email or number${suggest(field.format, ['url', 'email', 'number'])}`);
           }
           break;
         case 'toggle':
@@ -247,6 +277,17 @@ export function validate(pkg) {
     if (!parseURL(sample)) error(path, 'must be an http or https URL');
     else if (!parseURL(sample, { https: true })) warn(path, 'should use https');
   };
+  // probe: a URL that answers now, checked while url still waits for the person's answers.
+  const checkProbe = (item, at) => {
+    if (item.probe !== undefined) {
+      if (!isString(item.probe) || !parseURL(item.probe, { https: true })) error(`${at}.probe`, 'must be an https URL');
+      else if (templates(item.probe).length > 0) error(`${at}.probe`, "can't use {{templates}}: it's checked before anything is filled in");
+      else if (item.type === 'addon' && !item.probe.endsWith('/manifest.json')) error(`${at}.probe`, 'must end in /manifest.json (add "/manifest.json" to the end)');
+    } else if (isString(item.url) && templates(item.url).length > 0 && !WHOLE_TEMPLATE.test(item.url)) {
+      const example = item.type === 'addon' ? `"${(item.url.match(/^https:\/\/[^/{}]+/) ?? ['https://addon.example.com'])[0]}/manifest.json"` : 'the repository\'s plain URL';
+      warn(`${at}.url`, `has {{templates}}, so Exia can't show whether it's reachable until they're filled in; add "probe": ${example}`);
+    }
+  };
 
   // Items
   if (pkg.items === undefined) error('items', 'is required');
@@ -256,7 +297,7 @@ export function validate(pkg) {
     pkg.items.forEach((item, index) => {
       const at = `items[${index}]`;
       if (!isObject(item)) return error(at, 'must be an object');
-      if (!ITEM_TYPES.includes(item.type)) return error(`${at}.type`, `must be one of ${ITEM_TYPES.join(', ')}`);
+      if (!ITEM_TYPES.includes(item.type)) return error(`${at}.type`, `must be one of ${ITEM_TYPES.join(', ')}${suggest(item.type, ITEM_TYPES)}`);
       unknown(item, [...ITEM_KEYS.common, ...ITEM_KEYS[item.type]], at);
       text(item.title, `${at}.title`, 40, true);
       text(item.description, `${at}.description`, 80, false);
@@ -269,6 +310,7 @@ export function validate(pkg) {
       switch (item.type) {
         case 'repository':
           checkURL(item.url, `${at}.url`, scope);
+          checkProbe(item, at);
           if (item.ids !== undefined) {
             if (!Array.isArray(item.ids) || item.ids.length === 0) error(`${at}.ids`, 'must be a non-empty array of extension ids');
             else {
@@ -283,9 +325,11 @@ export function validate(pkg) {
           break;
         case 'addon': {
           checkURL(item.url, `${at}.url`, scope);
+          checkProbe(item, at);
           const literal = isString(item.url) && templates(item.url).length === 0;
           if (isString(item.url) && (literal || item.config !== undefined) && !item.url.endsWith('/manifest.json')) {
-            error(`${at}.url`, item.config !== undefined ? 'must end in /manifest.json when config is set' : 'must end in /manifest.json');
+            const hint = /\/manifest$/.test(item.url) ? ' (add ".json")' : ' (add "/manifest.json" to the end)';
+            error(`${at}.url`, (item.config !== undefined ? 'must end in /manifest.json when config is set' : 'must end in /manifest.json') + hint);
           }
           if (item.config !== undefined) {
             if (!isObject(item.config)) error(`${at}.config`, 'must be an object');
@@ -302,7 +346,7 @@ export function validate(pkg) {
         }
         case 'metadata': {
           if (!PROVIDERS.includes(item.provider)) {
-            error(`${at}.provider`, `must be one of ${PROVIDERS.join(', ')}`);
+            error(`${at}.provider`, `must be one of ${PROVIDERS.join(', ')}${suggest(item.provider, PROVIDERS)}`);
             break;
           }
           if (item.key !== undefined) {
@@ -409,11 +453,11 @@ export function render(pkg, { values = {}, enabled = {} } = {}) {
     const base = { index, type: item.type, title: item.title, enabled: itemOn(index) };
     if (item.type === 'repository') {
       const url = inURL(item.url);
-      return { ...base, url, ids: item.ids ?? [], probe: filled(item.url) ? url : null };
+      return { ...base, url, ids: item.ids ?? [], probe: filled(item.url) ? url : (item.probe ?? null) };
     }
     if (item.type === 'addon') {
       let url = inURL(item.url);
-      let probe = filled(item.url) ? url : null;
+      const probe = filled(item.url) ? url : (item.probe ?? null);
       if (item.config) {
         const config = {};
         for (const [key, value] of Object.entries(item.config)) {

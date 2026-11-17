@@ -10,6 +10,7 @@ for (const vector of read('./vectors.json').vectors) {
   test(`vector: ${vector.name}`, () => {
     const plan = render(vector.package, { values: vector.values });
     assert.deepEqual(plan.items.filter((i) => i.enabled).map((i) => i.url), vector.urls);
+    if (vector.probes) assert.deepEqual(probes(vector.package, { values: vector.values }), vector.probes);
   });
 }
 

@@ -59,27 +59,48 @@ per item that has fields, then installs everything at once. If one item fails, n
 | [`SPEC.md`](SPEC.md) | The protocol, version 1 |
 | [`schema/`](schema/exia-package.schema.json) | JSON Schema (draft 2020-12) for editors and CI |
 | [`src/`](src/index.js) | Reference validator and renderer, no dependencies |
-| [`bin/`](bin/exia-package.js) | `exia-package` command line tool |
+| [`bin/`](bin/exia-package.js) | `exia-package` command line tool ([npm](https://www.npmjs.com/package/exia-package)) |
+| [`action.yml`](action.yml) | GitHub Action that checks a package |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed, protocol and tools |
 | [`examples/`](examples/) | Valid packages to start from |
 | [`tests/`](tests/) | Tests and the conformance vectors every client must match |
 | [`badges/`](badges/) | Install in Exia badges (black and white) and the copy-paste snippet |
 | [`skill/SKILL.md`](skill/SKILL.md) | An agent skill that teaches coding agents to build packages |
 | [`docs/install/`](docs/install/index.html) | The web page behind the badge, which opens Exia |
 
-## Tools
+## Make one
+
+The fastest start is the [template repository](https://github.com/tronschell/exia-package-template): click
+**Use this template**, set **Settings › Pages › Source** to **GitHub Actions**, and edit `exia.json`. Every push is
+checked and published, and the run summary shows your install link and badge.
+
+Or on your own machine (Node.js 18 or later):
 
 ```sh
-npx -y github:tronschell/exia-protocol validate exia.json      # errors and warnings
-npx -y github:tronschell/exia-protocol render exia.json --set filmsKey=abc   # the exact URLs Exia installs
-npx -y github:tronschell/exia-protocol check exia.json         # reachable status of every item
-npx -y github:tronschell/exia-protocol link https://you.github.io/pack/exia.json   # install link and badge
+npx exia-package init                 # write a starter exia.json
+npx exia-package serve                # test on your phone: scan the QR code, edit, pull down in Exia to reload
+npx exia-package validate             # every problem, with line, column and a fix
+npx exia-package render --set apiKey=abc   # the exact URLs Exia installs for those answers
+npx exia-package check                # reachable status of every item
+npx exia-package link https://you.github.io/pack/exia.json   # install link, badge HTML/Markdown, QR code
 ```
 
-Point your editor at the schema with `"$schema"`:
+Point your editor at the schema with `"$schema"` for completion:
 
 ```json
 { "$schema": "https://raw.githubusercontent.com/tronschell/exia-protocol/main/schema/exia-package.schema.json" }
 ```
+
+### In CI
+
+```yaml
+- uses: actions/checkout@v4
+- uses: tronschell/exia-protocol@v1
+  with:
+    file: exia.json
+```
+
+Problems show up on the lines they're on in the pull request.
 
 ## Publishing
 

@@ -1,18 +1,53 @@
 {
   "name": "exia-package",
-  "version": "1.0.0",
-  "description": "The Exia Package Protocol: schema, reference validator and CLI for exia.json packages.",
-  "type": "module",
+  "version": "1.1.0",
+  "description": "Make, check, preview and share Exia packages (exia.json): schema, validator and CLI.",
+  "keywords": [
+    "exia",
+    "package",
+    "stremio",
+    "aidoku",
+    "paperback",
+    "manga",
+    "anime",
+    "addon"
+  ],
+  "homepage": "https://github.com/tronschell/exia-protocol#readme",
+  "bugs": {
+    "url": "https://github.com/tronschell/exia-protocol/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tronschell/exia-protocol.git"
+  },
   "license": "MIT",
-  "bin": { "exia-package": "bin/exia-package.js" },
+  "type": "module",
+  "bin": {
+    "exia-package": "bin/exia-package.js"
+  },
   "main": "src/index.js",
-  "exports": { ".": "./src/index.js", "./schema": "./schema/exia-package.schema.json" },
-  "files": ["bin", "src", "schema", "SPEC.md"],
-  "engines": { "node": ">=18" },
+  "exports": {
+    ".": "./src/index.js",
+    "./locate": "./src/locate.js",
+    "./qr": "./src/qr.js",
+    "./schema": "./schema/exia-package.schema.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "schema",
+    "SPEC.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "node --test tests/*.test.js",
     "validate-examples": "for f in examples/*/exia.json; do node bin/exia-package.js validate $f || exit 1; done"
   },
-  "devDependencies": { "ajv": "^8.17.1" },
-  "repository": { "type": "git", "url": "https://github.com/tronschell/exia-protocol.git" }
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "jsqr": "^1.4.0"
+  }
 }
